@@ -7,6 +7,7 @@ hyperparameters:
     embedder_dataset: text
     objective: otdd-exact
     weight: roberta
+    random: False
     maxsamples: 128  
     target_seq_len: 512  
     
@@ -16,6 +17,9 @@ hyperparameters:
     embedder_epochs: 60
     predictor_epochs: 0
     finetune_method: all
+        
+    flip: False
+    double: False
 
     drop_out: 0
     batch_size: 4
