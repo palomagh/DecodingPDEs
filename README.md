@@ -38,12 +38,11 @@ Place the corresponding implementation in `./src/embedders.py` and complete the 
 ## Citation
 If you find this project helpful, please consider citing our paper:
 ```bibtex
-@inproceedings{shen2023orca,
-  author = {Shen, Junhong and Li, Liam and Dery, Lucio M. and Staten, Corey and Khodak, Mikhail and Neubig, Graham and Talwalkar, Ameet},
-  title = {Cross-Modal Fine-Tuning: Align then Refine},
-  publisher = {ICML},
-  year = {2023},
-  url = {https://arxiv.org/abs/2302.05738}
+@article{garcia2025decoding,
+  title={Decoding Partial Differential Equations: Cross-Modal Adaptation of Decoder-only Models to PDEs},
+  author={Garc{\'\i}a-de-Herreros, Paloma and Slusallek, Philipp and Klakow, Dietrich and Gautam, Vagrant},
+  journal={arXiv preprint arXiv:2510.05278},
+  year={2025}
 }
 
 ```
