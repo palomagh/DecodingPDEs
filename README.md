@@ -1,6 +1,8 @@
-## Cross-Modal Fine-Tuning: Align then Refine
+## Decoding Partial Differential Equations: Cross-Modal Adaptation of Decoder-only Models to PDEs
 
-Original PyTorch implementation of ORCA proposed in the paper "[Cross-Modal Fine-Tuning: Align then Refine](https://arxiv.org/abs/2302.05738)". 
+Original implementation of Parallel Flipping and Sequence Doubling proposed in the paper "[Decoding Partial Differential Equations:
+Cross-Modal Adaptation of Decoder-only Models to PDEs](https://arxiv.org/abs/2510.05278)" based on the original ORCA implementation by "[Cross-Modal Fine-Tuning: Align then Refine](https://arxiv.org/abs/2302.05738)". 
+
 ORCA is developed for effectively solving  ML problems in diverse modalities using large-scale pretrained transformers. 
 It adapts to a target task  via an align-then-refine workflow: given the target input, ORCA first learns an embedding network  that aligns the embedded feature distribution with the pretraining modality. The pretrained model is then fine-tuned  on the embedded data to exploit the  knowledge shared across modalities. 
 
