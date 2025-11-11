@@ -303,7 +303,24 @@ def load_pde(root, batch_size, dataset='1DCFD', flip=False, double=False, valid_
                                   reduced_batch=reduced_batch,
                                   initial_step=initial_step,
                                   if_test=True)
+        
+        
+    if flip:
+            print('WARNING! The data is flipped')
+            print('You are running the configuration for Parallel Flipping') 
+            # Las siguientes lineas only para los experimentos de Dietrich 
+            # print("El shape de x antes de hacer flip ",self.x.shape)
+            train_data.x = torch.flip(train_data.x, dims=(-1,))
+            val_data.x = torch.flip(val_data.x, dims=(-1,))
+            # print("El shape de x despues de hacer flip ",self.x.shape)
+            train_data.y = torch.flip(train_data.y, dims=(-1,))
+            val_data.y = torch.flip(val_data.y, dims=(-1,))
 
+    elif double:
+            print('WARNING! The data is doubled')
+            print('You are running the configuration for Sequence Doubling')
+            train_data.x = train_data.x.repeat(1,1,2)
+            val_data.x = val_data.x.repeat(1,1,2)
     
     
     if dataset == '1DCFD':

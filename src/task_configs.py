@@ -3,7 +3,7 @@ import numpy as np
 import torch
 # import torch.nn as nn
 # import torch.nn.functional as F
-# from functools import reduce, partial
+from functools import partial
 
 # import data loaders, task-specific losses and metrics
 from data_loaders import load_text, load_pde, load_pythia_14m, load_pythia_70m, load_pythia_160m, load_pythia_410m, load_pythia_1b, load_pythia_14b, load_gpt, load_gptm, load_gptl, load_gptxl
