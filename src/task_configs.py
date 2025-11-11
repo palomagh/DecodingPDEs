@@ -12,7 +12,7 @@ from utils import accuracy, inverse_score, nmse, rmse_loss, nrmse_loss
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def get_data(root, dataset, batch_size, valid_split, maxsize=None, get_shape=False):
+def get_data(root, dataset, batch_size, valid_split, maxsize=None, get_shape=False, flip=False, double=False):
     data_kwargs = None
 
     if dataset == "your_new_task": # modify this to experiment with a new task
@@ -20,7 +20,7 @@ def get_data(root, dataset, batch_size, valid_split, maxsize=None, get_shape=Fal
     elif dataset == "text": # the dataset created for roberta
         train_loader, val_loader, test_loader = load_text(root, batch_size, maxsize=maxsize)
     elif dataset[:3] == 'PDE':
-        train_loader, val_loader, test_loader = load_pde(root, batch_size, dataset=dataset[4:], valid_split=valid_split)
+        train_loader, val_loader, test_loader = load_pde(root, batch_size, flip, double, dataset=dataset[4:], valid_split=valid_split)
     elif dataset == "pythia-14m":
         train_loader, val_loader, test_loader = load_pythia_14m(root, batch_size, maxsize=maxsize)
     elif dataset == "pythia-70m":
