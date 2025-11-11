@@ -1,25 +1,23 @@
 import numpy as np
 import os
 import pickle
-import gzip
-import requests
-import glob
+# import gzip
+# import requests
+# import glob
 import h5py
 import math as mt
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+# import torch.nn.functional as F
 import torch.utils.data
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-from torch.utils.data import Dataset, IterableDataset, DataLoader
+# import torchvision.transforms as transforms
+# import torchvision.datasets as datasets
+from torch.utils.data import Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 """Data Loaders"""
-
-from PIL import Image
 
 def make_dataset(image_list_path, domain):
     image_list = open(image_list_path).readlines()
