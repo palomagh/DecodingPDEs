@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from functools import reduce, partial
 
 # import data loaders, task-specific losses and metrics
-from data_loaders import load_imagenet, load_text, load_cifar, load_mnist, load_deepsea, load_darcy_flow, load_psicov, load_ecg, load_satellite, load_ninapro, load_cosmic, load_spherical, load_fsd, load_domainnet, load_pde, load_openml, load_drug, load_pythia_14m, load_pythia_70m, load_pythia_160m, load_pythia_410m, load_pythia_1b, load_pythia_14b, load_gpt, load_gptm, load_gptl, load_gptxl
+from data_loaders import load_text, load_pde, load_pythia_14m, load_pythia_70m, load_pythia_160m, load_pythia_410m, load_pythia_1b, load_pythia_14b, load_gpt, load_gptm, load_gptl, load_gptxl
 from utils import FocalLoss, LpLoss, conv_init, get_params_to_update, set_param_grad, set_grad_state
 from utils import mask, accuracy, accuracy_onehot, auroc, psicov_mae, ecg_f1, fnr, map_value, inv_auroc, r2_score, inverse_score, auc_metric, nmse, rmse_loss, nrmse_loss
 

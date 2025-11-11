@@ -26,124 +26,6 @@ def make_dataset(image_list_path, domain):
     images = [(val.split()[0], int(val.split()[1]), int(domain)) for val in image_list]
     return images
 
-def rgb_loader(path):
-    with open(path, 'rb') as f:
-        with Image.open(f) as img:
-            return img.convert('RGB')
-
-def load_domainnet(root, batch_size, valid_split=-1, domain_name='sketch'):
-    root += '/domainnet'
-    domain_label = 0
-
-    normalize_transform = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-
-    train_transforms = transforms.Compose([
-                    transforms.Resize((256,256)),
-                    transforms.RandomCrop((224, 224)),
-                    transforms.RandomHorizontalFlip(),
-                    transforms.ToTensor(),
-                    normalize_transform
-                ])
-
-    test_transforms = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                normalize_transform
-            ])
-
-    imgs_train = make_dataset(os.path.join(root, domain_name + '_train_mini.txt'), domain_label)
-
-    while not os.path.exists(os.path.join(root, domain_name)):
-        cwd = os.getcwd()
-        os.chdir(root)
-        try:
-            os.system("wget http://csr.bu.edu/ftp/visda/2019/multi-source/groundtruth/" + domain_name + ".zip")
-            os.system("unzip -aq "+ domain_name + ".zip")
-        except:
-            pass
-        os.chdir(cwd)
-
-    xs, ys = [], []
-    for path, target, domain in imgs_train:
-        img = rgb_loader(os.path.join(root, path))
-        img = train_transforms(img)
-        target = torch.squeeze(torch.LongTensor([np.int64(target).item()]))
-        xs.append(img)
-        ys.append(target)
-
-    xs = torch.stack(xs, 0).float()
-    ys = torch.stack(ys, 0).squeeze().long()
-
-    train_dataset = torch.utils.data.TensorDataset(xs, ys)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
-
-    imgs_test = make_dataset(os.path.join(root, domain_name + '_test_mini.txt'), domain_label)
-    xs, ys = [], []
-    for path, target, domain in imgs_test:
-        img = rgb_loader(os.path.join(root, path))
-        img = test_transforms(img)
-        target = torch.squeeze(torch.LongTensor([np.int64(target).item()]))
-        xs.append(img)
-        ys.append(target)
-
-    xs = torch.stack(xs, 0).float()
-    ys = torch.stack(ys, 0).squeeze().long()
-    
-    test_dataset = torch.utils.data.TensorDataset(xs, ys)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
-
-    return train_loader, None, test_loader
-
-
-def load_imagenet(root, batch_size, workers=4, pin_memory=True, maxsize=None):
-    traindir = os.path.join(root, 'tiny-imagenet-200/train')
-    valdir = os.path.join(root, 'tiny-imagenet-200/val')
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-
-    train_dataset = datasets.ImageFolder(
-        traindir,
-        transforms.Compose([
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize
-        ])
-    )
-    val_dataset = datasets.ImageFolder(
-        valdir,
-        transforms.Compose([
-            transforms.Resize(240),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize
-        ])
-    )
-
-    if maxsize is not None:
-        train_sampler, valid_sampler = split_dataset(train_dataset, maxsize)
-    else:
-        train_sampler, valid_sampler = None, None
-
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=maxsize is None,
-        num_workers=workers,
-        pin_memory=pin_memory,
-        sampler=train_sampler
-    )
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=workers,
-        pin_memory=pin_memory,
-        sampler=valid_sampler
-    )
-    return train_loader, val_loader, val_loader
-
-
 
 import scipy.io
 from sklearn.model_selection import train_test_split
@@ -171,6 +53,156 @@ def load_text(root, batch_size, valid_split=-1, maxsize=None):
 
     train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
     return train_loader, None, train_loader
+ 
+def load_pythia_14m(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_pythia14m.npy')
+
+    train_data = np.load(os.path.join(path, 'x_pythia14m.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'y_pythia14m.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader
+
+def load_pythia_70m(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_pythia70m.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_pythia70m.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'y_pythia70m.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader
+
+def load_pythia_160m(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_pythia160m.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_pythia160m.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'y_pythia160m.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader  
+
+def load_pythia_410m(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_pythia410m.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_pythia410m.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'y_pythia410m.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader
+
+def load_pythia_1b(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_pythia1b.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_pythia1b.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'y_pythia1b.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader
+
+def load_pythia_14b(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_pythia14b.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_pythia1,4b.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'y_pythia1,4b.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader 
+
+def load_gpt(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_gpt.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_gpt.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'gpt-y.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()#.mean(1)
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader
+
+def load_gptm(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_gptm.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_gpt_medium.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'gpt-m-y.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()#.mean(1)
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader
+
+def load_gptl(root, batch_size, valid_split=-1, maxsize=None):
+    path = root
+
+    file_path = os.path.join(path, 'x_gptl.npy')
+    
+    train_data = np.load(os.path.join(path, 'x_gpt_large.npy'), allow_pickle =True)
+    train_labels = np.load(os.path.join(path, 'gpt-l-y.npy'), allow_pickle =True)
+
+    maxsize = len(train_data) if maxsize is None else maxsize
+    train_data = torch.from_numpy(train_data[:maxsize]).float()#.mean(1)
+    train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    return train_loader, None, train_loader
+
+def load_gptxl(root, batch_size, valid_split=-1, maxsize=None):
+   path = root
+
+   file_path = os.path.join(path, 'x_gptxl.npy') 
+   
+   train_data = np.load(os.path.join(path, 'x_gpt_xl.npy'), allow_pickle =True)
+   train_labels = np.load(os.path.join(path, 'gpt-xl-y.npy'), allow_pickle =True)
+
+   maxsize = len(train_data) if maxsize is None else maxsize
+   train_data = torch.from_numpy(train_data[:maxsize]).float()#.mean(1)
+   train_labels = torch.from_numpy(train_labels[:maxsize]).long()
+
+   train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_data, train_labels), batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+   return train_loader, None, train_loader
 
 def load_pde(root, batch_size, dataset='1DCFD', flip=False, double=False, valid_split=-1, num_workers=4):
     large = False
@@ -304,38 +336,38 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 # +
-class DataGenerator(object):
-    """
-    A class of functions for generating jsonl datasets for classification tasks.
-    """
-    def __init__(self, did, seed = 123):
-        self.seed = seed
-        self.did = did
-        self.fname = f'{did}'
-        self.scaler = StandardScaler()
+# class DataGenerator(object):
+#     """
+#     A class of functions for generating jsonl datasets for classification tasks.
+#     """
+#     def __init__(self, did, seed = 123):
+#         self.seed = seed
+#         self.did = did
+#         self.fname = f'{did}'
+#         self.scaler = StandardScaler()
 
-    def preprocess_data(self, data,  normalized=False, corruption_level=0, outliers=None):
-        X, y = data['data'], data['target']
-        if normalized:
-            X = self.scaler.fit_transform(X)
+#     def preprocess_data(self, data,  normalized=False, corruption_level=0, outliers=None):
+#         X, y = data['data'], data['target']
+#         if normalized:
+#             X = self.scaler.fit_transform(X)
         
-        X_train, X_valid, X_test, y_train, y_valid, y_test = data_split(X, y)
-        if outliers is not None:
-            X_out, y_out = outliers
-            X_train = np.concatenate([X_train, X_out], axis = 0)
-            y_train = np.concatenate([y_train, y_out], axis = 0)
-        if corruption_level > 0:
-            # corrupt here
-            n = len(y_train)
-            m = int(n * corruption_level)
-            inds = random.sample(range(1, n), m)
-            for i in inds:
-                y_train[i] = 1 - y_train[i] #binary
+#         X_train, X_valid, X_test, y_train, y_valid, y_test = data_split(X, y)
+#         if outliers is not None:
+#             X_out, y_out = outliers
+#             X_train = np.concatenate([X_train, X_out], axis = 0)
+#             y_train = np.concatenate([y_train, y_out], axis = 0)
+#         if corruption_level > 0:
+#             # corrupt here
+#             n = len(y_train)
+#             m = int(n * corruption_level)
+#             inds = random.sample(range(1, n), m)
+#             for i in inds:
+#                 y_train[i] = 1 - y_train[i] #binary
         
-        train_df, val_df, test_df = pd.DataFrame(X_train), pd.DataFrame(X_valid), pd.DataFrame(X_test)
-        train_df['y'], val_df['y'], test_df['y'] = y_train, y_valid, y_test   
+#         train_df, val_df, test_df = pd.DataFrame(X_train), pd.DataFrame(X_valid), pd.DataFrame(X_test)
+#         train_df['y'], val_df['y'], test_df['y'] = y_train, y_valid, y_test   
 
-        return train_df, val_df, test_df
+#         return train_df, val_df, test_df
  
 
 def load_mapping(mapping_file):
@@ -803,32 +835,32 @@ def split_dataset(train_dataset, valid_split):
 
     return train_sampler, valid_sampler
 
-def bitreversal_permutation(n):
-    """Return the bit reversal permutation used in FFT.
-    Parameter:
-        n: integer, must be a power of 2.
-    Return:
-        perm: bit reversal permutation, numpy array of size n
-    """
-    m = int(math.log2(n))
-    assert n == 1 << m, 'n must be a power of 2'
-    perm = np.arange(n).reshape(n, 1)
-    for i in range(m):
-        n1 = perm.shape[0] // 2
-        perm = np.hstack((perm[:n1], perm[n1:]))
-    return torch.tensor(perm.squeeze(0))
+# def bitreversal_permutation(n):
+#     """Return the bit reversal permutation used in FFT.
+#     Parameter:
+#         n: integer, must be a power of 2.
+#     Return:
+#         perm: bit reversal permutation, numpy array of size n
+#     """
+#     m = int(math.log2(n))
+#     assert n == 1 << m, 'n must be a power of 2'
+#     perm = np.arange(n).reshape(n, 1)
+#     for i in range(m):
+#         n1 = perm.shape[0] // 2
+#         perm = np.hstack((perm[:n1], perm[n1:]))
+#     return torch.tensor(perm.squeeze(0))
 
-class Permute2D(nn.Module):
+# class Permute2D(nn.Module):
 
-    def __init__(self, row, col):
+#     def __init__(self, row, col):
 
-        super().__init__()
-        self.rowperm = torch.LongTensor(bitreversal_permutation(row))
-        self.colperm = torch.LongTensor(bitreversal_permutation(col))
+#         super().__init__()
+#         self.rowperm = torch.LongTensor(bitreversal_permutation(row))
+#         self.colperm = torch.LongTensor(bitreversal_permutation(col))
 
-    def forward(self, tensor):
+#     def forward(self, tensor):
 
-        return tensor[:,self.rowperm][:,:,self.colperm]
+#         return tensor[:,self.rowperm][:,:,self.colperm]
 
 class Permute1D(nn.Module):
 
