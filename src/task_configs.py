@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from functools import reduce, partial
 
 # import data loaders, task-specific losses and metrics
-from data_loaders import load_imagenet, load_text, load_cifar, load_mnist, load_deepsea, load_darcy_flow, load_psicov, load_ecg, load_satellite, load_ninapro, load_cosmic, load_spherical, load_fsd, load_domainnet, load_pde, load_openml, load_drug
+from data_loaders import load_imagenet, load_text, load_cifar, load_mnist, load_deepsea, load_darcy_flow, load_psicov, load_ecg, load_satellite, load_ninapro, load_cosmic, load_spherical, load_fsd, load_domainnet, load_pde, load_openml, load_drug, load_pythia_14m, load_pythia_70m, load_pythia_160m, load_pythia_410m, load_pythia_1b, load_pythia_14b, load_gpt, load_gptm, load_gptl, load_gptxl
 from utils import FocalLoss, LpLoss, conv_init, get_params_to_update, set_param_grad, set_grad_state
 from utils import mask, accuracy, accuracy_onehot, auroc, psicov_mae, ecg_f1, fnr, map_value, inv_auroc, r2_score, inverse_score, auc_metric, nmse, rmse_loss, nrmse_loss
 
@@ -17,51 +17,31 @@ def get_data(root, dataset, batch_size, valid_split, maxsize=None, get_shape=Fal
 
     if dataset == "your_new_task": # modify this to experiment with a new task
         train_loader, val_loader, test_loader = None, None, None
-    elif dataset == "DOMAINNET":
-        train_loader, val_loader, test_loader = load_domainnet(root, batch_size, valid_split=valid_split)
-    elif dataset == "IMAGENET":
-        train_loader, val_loader, test_loader = load_imagenet(root, batch_size, maxsize=maxsize)
-    elif dataset == "text":
+    elif dataset == "text": # the dataset created for roberta
         train_loader, val_loader, test_loader = load_text(root, batch_size, maxsize=maxsize)
-    elif dataset == "CIFAR10":
-        train_loader, val_loader, test_loader = load_cifar(root, 10, batch_size, valid_split=valid_split, maxsize=maxsize)
-    elif dataset == "CIFAR10-PERM":
-        train_loader, val_loader, test_loader = load_cifar(root, 10, batch_size, permute=True, valid_split=valid_split, maxsize=maxsize)
-    elif dataset == "CIFAR100":
-        train_loader, val_loader, test_loader = load_cifar(root, 100, batch_size, valid_split=valid_split, maxsize=maxsize)
-    elif dataset == "CIFAR100-PERM":
-        train_loader, val_loader, test_loader = load_cifar(root, 100, batch_size, permute=True, valid_split=valid_split, maxsize=maxsize)
-    elif dataset == "MNIST":
-        train_loader, val_loader, test_loader = load_mnist(root, batch_size, valid_split=valid_split)
-    elif dataset == "MNIST-PERM":
-        train_loader, val_loader, test_loader = load_mnist(root, batch_size, permute=True, valid_split=valid_split)
-    elif dataset == "SPHERICAL":
-        train_loader, val_loader, test_loader = load_spherical(root, batch_size, valid_split=valid_split, maxsize=maxsize)
-    elif dataset == "DEEPSEA":
-        train_loader, val_loader, test_loader = load_deepsea(root, batch_size, valid_split=valid_split)
-    elif dataset == "DARCY-FLOW-5":
-        train_loader, val_loader, test_loader, y_normalizer = load_darcy_flow(root, batch_size, sub = 5, valid_split=valid_split)
-        data_kwargs = {"decoder": y_normalizer}
-    elif dataset == 'PSICOV':
-        train_loader, val_loader, test_loader, _, _ = load_psicov(root, batch_size, valid_split=valid_split)
-    elif dataset == "ECG":
-        train_loader, val_loader, test_loader = load_ecg(root, batch_size, valid_split=valid_split)
-    elif dataset == "SATELLITE":
-        train_loader, val_loader, test_loader = load_satellite(root, batch_size, valid_split=valid_split)
-    elif dataset == "NINAPRO":
-        train_loader, val_loader, test_loader = load_ninapro(root, batch_size, valid_split=valid_split, maxsize=maxsize)
-    elif dataset == "COSMIC":
-        train_loader, val_loader, test_loader = load_cosmic(root, batch_size, valid_split=valid_split)
-        data_kwargs = {'transform': mask}
-    elif dataset == "FSD":
-        train_loader, val_loader, test_loader = load_fsd(root, batch_size, valid_split=valid_split)
     elif dataset[:3] == 'PDE':
         train_loader, val_loader, test_loader = load_pde(root, batch_size, dataset=dataset[4:], valid_split=valid_split)
-    elif dataset[:6] == 'OPENML':
-        train_loader, val_loader, test_loader = load_openml(root, batch_size, int(dataset[6:]), valid_split=valid_split, get_shape=get_shape)
-    elif dataset[:4] == 'DRUG':
-        train_loader, val_loader, test_loader = load_drug(root, batch_size, dataset[5:], valid_split=valid_split)
-
+    elif dataset == "pythia-14m":
+        train_loader, val_loader, test_loader = load_pythia_14m(root, batch_size, maxsize=maxsize)
+    elif dataset == "pythia-70m":
+        train_loader, val_loader, test_loader = load_pythia_70m(root, batch_size, maxsize=maxsize)
+    elif dataset == "pythia-160m":
+        train_loader, val_loader, test_loader = load_pythia_160m(root, batch_size, maxsize=maxsize)
+    elif dataset == "pythia-410m":
+        train_loader, val_loader, test_loader = load_pythia_410m(root, batch_size, maxsize=maxsize)
+    elif dataset == "pythia-1b":
+        train_loader, val_loader, test_loader = load_pythia_1b(root, batch_size, maxsize=maxsize)
+    elif dataset == "pythia-1,4b":
+        train_loader, val_loader, test_loader = load_pythia_14b(root, batch_size, maxsize=maxsize)
+    elif dataset == "gpt2":
+        train_loader, val_loader, test_loader = load_gpt(root, batch_size, maxsize=maxsize)
+    elif dataset == 'gpt2-medium':
+        train_loader, val_loader, test_loader = load_gptm(root, batch_size, maxsize=maxsize)
+    elif dataset == 'gpt2-large':
+        train_loader, val_loader, test_loader = load_gptl(root, batch_size, maxsize=maxsize)
+    elif dataset == 'gpt2-xl':
+        train_loader, val_loader, test_loader = load_gptxl(root, batch_size, maxsize=maxsize)
+    
     n_train, n_val, n_test = len(train_loader), len(val_loader) if val_loader is not None else 0, len(test_loader)
 
     if not valid_split:
