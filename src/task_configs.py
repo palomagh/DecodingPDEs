@@ -1,14 +1,14 @@
 import math, copy
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from functools import reduce, partial
+# import torch.nn as nn
+# import torch.nn.functional as F
+# from functools import reduce, partial
 
 # import data loaders, task-specific losses and metrics
 from data_loaders import load_text, load_pde, load_pythia_14m, load_pythia_70m, load_pythia_160m, load_pythia_410m, load_pythia_1b, load_pythia_14b, load_gpt, load_gptm, load_gptl, load_gptxl
-from utils import FocalLoss, LpLoss, conv_init, get_params_to_update, set_param_grad, set_grad_state
-from utils import mask, accuracy, accuracy_onehot, auroc, psicov_mae, ecg_f1, fnr, map_value, inv_auroc, r2_score, inverse_score, auc_metric, nmse, rmse_loss, nrmse_loss
+from utils import get_params_to_update, set_param_grad, set_grad_state
+from utils import accuracy, inverse_score, nmse, rmse_loss, nrmse_loss
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -62,59 +62,6 @@ def get_config(root, args):
         dims, num_classes = None, None
         loss = None
 
-    elif dataset == "DOMAINNET":
-        dims, sample_shape, num_classes = 1, (1, 3, 224, 224), 40
-        loss = nn.CrossEntropyLoss()
-
-    elif dataset[:5] == "CIFAR":
-        dims, sample_shape, num_classes = 2,  (1, 3, 32, 32), 10 if dataset in ['CIFAR10', 'CIFAR10-PERM'] else 100
-        loss = nn.CrossEntropyLoss()
-
-    elif dataset == 'SPHERICAL':
-        dims, sample_shape, num_classes = 2, (1, 3, 60, 60), 100
-        loss = nn.CrossEntropyLoss() 
-
-    elif dataset == "DARCY-FLOW-5":
-        dims, sample_shape, num_classes = 2, (1, 3, 85, 85), 1
-        loss = LpLoss(size_average=False)
-        args.infer_label = True
-
-    elif dataset == "PSICOV":
-        dims, sample_shape, num_classes = 2, (1, 57, 512, 512), 1
-        loss = nn.MSELoss(reduction='mean')
-        args.infer_label = True
-
-    elif dataset == "NINAPRO": 
-        dims, sample_shape, num_classes = 2, (1, 1, 16, 52), 18
-        loss = FocalLoss(alpha=1)
-
-    elif dataset == "COSMIC":
-        dims, sample_shape, num_classes = 2, (1, 1, 128, 128), 1
-        loss = nn.BCEWithLogitsLoss()
-        args.infer_label = True
-
-    elif dataset == 'FSD':
-        dims, sample_shape, num_classes = 2, (1, 1, 96, 102), 200
-        loss = nn.BCEWithLogitsLoss(pos_weight=10 * torch.ones((200, )))
-        args.infer_label = True
-        
-    elif dataset[:5] == "MNIST":
-        dims, sample_shape, num_classes = 1, (1, 1, 784), 10
-        loss = F.nll_loss
-    
-    elif dataset == "ECG": 
-        dims, sample_shape, num_classes = 1, (1, 1, 1000), 4
-        loss = nn.CrossEntropyLoss()   
-
-    elif dataset == "SATELLITE":
-        dims, sample_shape, num_classes = 1, (1, 1, 46), 24
-        loss = nn.CrossEntropyLoss()
-
-    elif dataset == "DEEPSEA":
-        dims, sample_shape, num_classes = 1, (1, 4, 1000), 36
-        loss = nn.BCEWithLogitsLoss(pos_weight=4 * torch.ones((36, )))
-        args.infer_label = True
-
     elif dataset == 'PDE-Burgers':
         dims, sample_shape, num_classes = 1, (1, 1, 256), (1, 1024)
         loss = rmse_loss 
@@ -139,71 +86,16 @@ def get_config(root, args):
         dims, sample_shape, num_classes = 1, (1, 1, 1024), (1, 1024)
         loss = nrmse_loss 
         args.infer_label = True
-
-    elif dataset == 'PDE-SW':
-        dims, sample_shape, num_classes = 1, (1, 1, 128, 128), 1
-        loss = nrmse_loss 
-        args.infer_label = True
-
-    elif dataset == 'PDE-RD2D':
-        dims, sample_shape, num_classes = 1, (1, 1, 128, 128), 1
-        loss = nrmse_loss 
-        args.infer_label = True
-
-    elif dataset == 'PDE-Darcy':
-        dims, sample_shape, num_classes = 1, (1, 1, 64, 64), 1
-        loss = nrmse_loss 
-        args.infer_label = True
-
-    elif dataset == 'PDE-2DCFD':
-        dims, sample_shape, num_classes = 1, (1, 4, 64, 64), (1, 4, 64, 64)
-        loss = nrmse_loss 
-        args.infer_label = True
     
-    elif dataset[:6] == 'OPENML':
-        train_loader, val_loader, test_loader = load_openml(root, 1, int(dataset[6:]), get_shape=True)
-        sample_shape = (1, train_loader.dataset.tensors[0].size(dim=-2), train_loader.dataset.tensors[0].size(dim=-1))
-        num_classes = int(train_loader.dataset.tensors[1].max().item() + 1)
-        dims = 1
-        weights = []
-        for c in range(num_classes):
-            weights.append(1.0 / ((train_loader.dataset.tensors[1]==c).float().mean().item()))
-
-        loss = nn.CrossEntropyLoss(weight=torch.tensor(weights))
-        print("OPENML dataset id:", int(dataset[6:]), " sample shape:", sample_shape, " num classes: ", num_classes, "loss: ", loss, "weights:", weights)
-
-    elif dataset[:4] == 'DRUG':
-        dims, sample_shape, num_classes = 1, (1, 1, 3840), 1
-        loss = nn.MSELoss(reduction='mean')
-        args.infer_label = True
-
     return dims, sample_shape, num_classes, loss, args
 
 
 def get_metric(root, dataset):
     if dataset == "your_new_task": # modify this to experiment with a new task
         return inverse_score(accuracy), np.min
-    if dataset[:5] == "CIFAR" or dataset[:5] == "MNIST" or dataset == 'NINAPRO' or dataset == "SATELLITE" or dataset == "SPHERICAL" or dataset == "DOMAINNET":
-        return inverse_score(accuracy), np.min
-    if dataset == "DEEPSEA":
-        return inverse_score(auroc), np.min
-    if dataset == "DARCY-FLOW-5":
-        return LpLoss(size_average=True), np.min
+    
     if dataset[:3] == 'PDE':
         return nmse, np.min
-    if dataset == 'PSICOV':
-        return psicov_mae(root), np.min
-    if dataset == 'ECG':
-        return inverse_score(ecg_f1), np.min
-    if dataset == 'COSMIC':
-        return inv_auroc, np.min
-    if dataset == 'FSD':
-        return inverse_score(map_value), np.min
-    if dataset[:4] == 'DRUG':
-        return inverse_score(r2_score), np.min
-    if dataset[:6] == 'OPENML':
-        return inverse_score(auc_metric), np.min
-        # return inverse_score(accuracy), np.min
 
 
 def get_optimizer(name, params):
