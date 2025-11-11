@@ -168,20 +168,11 @@ class wrapper1D(torch.nn.Module):
         else:
             self.embedder = nn.Identity()
 
-        if not weight == 'swin': 
-            self.model.embeddings = embedder_placeholder()
-            if self.dense:
-                self.model.pooler = nn.Identity()
-                self.predictor = adaptive_pooler(out_channel = output_shape[-2] * self.embedder.stack_num, output_shape=output_shape, dense=True)
-            else:
-                self.model.pooler = adaptive_pooler()
-                self.predictor = nn.Linear(in_features=768, out_features=output_shape)   
-        else:
-            self.model.swin.embeddings = self.embedder  
-            if self.dense:
-                self.predictor = adaptive_pooler(out_channel = output_shape[-2] * self.embedder.stack_num)
-            else:
-                self.predictor = nn.Linear(in_features=1024, out_features=output_shape)  
+        self.model.embeddings = embedder_placeholder()
+
+        self.model.pooler = nn.Identity()
+        self.predictor = adaptive_pooler(out_channel = output_shape[-2] * self.embedder.stack_num, output_shape=output_shape, dense=True)
+
 
         if activation == 'sigmoid':
             self.predictor = nn.Sequential(self.predictor, nn.Sigmoid())  
@@ -191,48 +182,47 @@ class wrapper1D(torch.nn.Module):
 
 
     def forward(self, x):
-        if self.weight == 'swin':
-            if self.output_raw:
-                return self.model.swin.embeddings(x)[0]
-
-            x = self.model(x).logits
-            return self.predictor(x)
 
         if self.output_raw:
             return self.embedder(x) 
 
         x = self.embedder(x)
 
-        if self.dense:
-            x = self.model(inputs_embeds=x)['last_hidden_state']
-            x = self.predictor(x)
-        else:
-            x = self.model(inputs_embeds=x)['pooler_output']
-            x = self.predictor(x)
+        x = self.model(inputs_embeds=x)['last_hidden_state']
+        x = self.predictor(x)
+
 
         if x.shape[1] == 1 and len(x.shape) == 2:
             x = x.squeeze(1)
 
+        if self.double:
+            x = x[:,:,x.shape[-1]//2:]
+        
         return x
 
 
 class Embeddings1D(nn.Module):
-    def __init__(self, input_shape, embed_dim=768, target_seq_len=64, config=None, dense=False):
+    def __init__(self, input_shape, embed_dim=768, target_seq_len=64, config=None, dense=False, double=False):
         super().__init__()
         self.dense = dense
+        self.double = double
         self.embed_dim = embed_dim
         self.stack_num = self.get_stack_num(input_shape[-1], target_seq_len)
         self.patched_dimensions = (int(np.sqrt(input_shape[-1] // self.stack_num)), int(np.sqrt(input_shape[-1] // self.stack_num)))
         self.norm = nn.LayerNorm(embed_dim)
         self.padding_idx = 1
-        self.position_embeddings = nn.Embedding(target_seq_len, embed_dim, padding_idx=self.padding_idx)
+        
+        if self.double:
+            self.position_embeddings = nn.Embedding(target_seq_len * 2, embed_dim, padding_idx=self.padding_idx)
+        else: 
+            self.position_embeddings = nn.Embedding(target_seq_len, embed_dim, padding_idx=self.padding_idx)
 
         self.projection = nn.Conv1d(input_shape[1], embed_dim, kernel_size=self.stack_num, stride=self.stack_num)
         conv_init(self.projection)
 
 
     def get_stack_num(self, input_len, target_seq_len):
-        if self.embed_dim == 768:
+        if self.embed_dim in [128, 512, 768, 1024, 1280, 1600, 2048]:
             for i in range(1, input_len + 1):
                 if input_len % i == 0 and input_len // i <= target_seq_len:
                     break
@@ -257,7 +247,7 @@ class Embeddings1D(nn.Module):
         self.ps = self.position_embeddings(position_ids)
         x = x + self.ps
 
-        if self.embed_dim == 768:
+        if self.embed_dim in [128, 512, 768, 1024, 1280, 1600, 2048]:
             return x
         else:
             return x, self.patched_dimensions
