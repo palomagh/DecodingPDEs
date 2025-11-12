@@ -258,12 +258,12 @@ class Embeddings1D(nn.Module):
 
 def get_tgt_model(args, root, sample_shape, num_classes, loss, add_loss=False, use_determined=False, context=None, opid=0):
     
-    src_train_loader, _, _, _, _, _, _ = get_data(root, args.embedder_dataset, args.batch_size, False, maxsize=5000)
+    src_train_loader, _, _, _, _, _, _ = get_data(root, args.embedder_dataset, args.batch_size, False, maxsize=5000,flip=args.flip, dobule=args.double)
 
     src_feats, src_ys = src_train_loader.dataset.tensors[0].mean(1), src_train_loader.dataset.tensors[1]
     src_train_dataset = torch.utils.data.TensorDataset(src_feats, src_ys)
         
-    tgt_train_loader, _, _, n_train, _, _, data_kwargs = get_data(root, args.dataset, args.batch_size, False, get_shape=True)
+    tgt_train_loader, _, _, n_train, _, _, data_kwargs = get_data(root, args.dataset, args.batch_size, False, get_shape=True, flip=args.flip, double=args.double)
     transform = data_kwargs['transform'] if data_kwargs is not None and 'transform' in data_kwargs else None
         
     if args.infer_label:

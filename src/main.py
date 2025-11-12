@@ -37,7 +37,7 @@ def main(use_determined, args, info=None, context=None):
 
     model, embedder_stats = get_tgt_model(args, root, sample_shape, num_classes, loss, False, use_determined, context)
         
-    train_loader, val_loader, test_loader, n_train, n_val, n_test, data_kwargs = get_data(root, args.dataset, args.batch_size, args.valid_split)
+    train_loader, val_loader, test_loader, n_train, n_val, n_test, data_kwargs = get_data(root, args.dataset, args.batch_size, args.valid_split, flip=args.flip, double=args.double)
     metric, compare_metrics = get_metric(root, args.dataset)
     decoder = data_kwargs['decoder'] if data_kwargs is not None and 'decoder' in data_kwargs else None 
     transform = data_kwargs['transform'] if data_kwargs is not None and 'transform' in data_kwargs else None 

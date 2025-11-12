@@ -5,7 +5,7 @@ import torch
 # import torch.nn.functional as F
 from functools import partial
 
-# import data loaders, task-specific losses and metrics
+# import data loaders, task-specific, losses and metrics
 from data_loaders import load_text, load_pde, load_pythia_14m, load_pythia_70m, load_pythia_160m, load_pythia_410m, load_pythia_1b, load_pythia_14b, load_gpt, load_gptm, load_gptl, load_gptxl
 from utils import get_params_to_update, set_param_grad, set_grad_state
 from utils import accuracy, inverse_score, nmse, rmse_loss, nrmse_loss
