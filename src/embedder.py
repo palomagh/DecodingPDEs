@@ -258,7 +258,7 @@ class Embeddings1D(nn.Module):
 
 def get_tgt_model(args, root, sample_shape, num_classes, loss, add_loss=False, use_determined=False, context=None, opid=0):
     
-    src_train_loader, _, _, _, _, _, _ = get_data(root, args.embedder_dataset, args.batch_size, False, maxsize=5000,flip=args.flip, dobule=args.double)
+    src_train_loader, _, _, _, _, _, _ = get_data(root, args.embedder_dataset, args.batch_size, False, maxsize=5000)
 
     src_feats, src_ys = src_train_loader.dataset.tensors[0].mean(1), src_train_loader.dataset.tensors[1]
     src_train_dataset = torch.utils.data.TensorDataset(src_feats, src_ys)
@@ -276,7 +276,7 @@ def get_tgt_model(args, root, sample_shape, num_classes, loss, add_loss=False, u
     tgt_train_loaders, tgt_class_weights = load_by_class(tgt_train_loader, num_classes_new)
 
     wrapper_func = wrapper1D
-    tgt_model = wrapper_func(sample_shape, num_classes, weight=args.weight, train_epoch=args.embedder_epochs, activation=args.activation, target_seq_len=args.target_seq_len, drop_out=args.drop_out)
+    tgt_model = wrapper_func(sample_shape, num_classes, weight=args.weight, train_epoch=args.embedder_epochs, activation=args.activation, target_seq_len=args.target_seq_len, drop_out=args.drop_out, random=args.random, double=args.double)
     tgt_model = tgt_model.to(args.device).train()
 
     args, tgt_model, tgt_model_optimizer, tgt_model_scheduler = get_optimizer_scheduler(args, tgt_model, module='embedder')
