@@ -586,10 +586,31 @@ def set_grad_state(module, state):
 
 def set_param_grad(model, finetune_method):
 
-    if finetune_method == "layernorm":
+    if finetune_method == "layernorm-roberta":
         for n, m in model.named_parameters():
             if 'layer' in n:
                 if 'layernorm' in n or 'LayerNorm' in n:
+                    continue
+                else:
+                    m.requires_grad = False
+    elif finetune_method == "layernorm-gpt2":
+        for n, m in model.named_parameters():
+                n = n.lower()
+                if 'ln' in n or 'norm' in n:
+                    continue
+                elif 'wpe' in n or 'position_embeddings' in n or 'pos_drop' in n:
+                    continue
+                elif 'mlp' in n:
+                    m.requires_grad = False
+                elif 'attn' in n:
+                    m.requires_grad = False
+                else:
+                    m.requires_grad = False
+    
+    elif finetune_method == 'layernorm-pythia':
+        for n, m in model.named_parameters():
+            if 'layers' in n:
+                if 'layernorm' in n:
                     continue
                 else:
                     m.requires_grad = False
